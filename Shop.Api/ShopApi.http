@@ -1,0 +1,18 @@
+@ShopApi_HostAddress = http://localhost:5097
+
+GET {{ShopApi_HostAddress}}/api/product
+
+###
+
+GET {{ShopApi_HostAddress}}/api/product/33
+Accept: application/json
+
+###
+
+POST {{ShopApi_HostAddress}}/api/product
+Content-Type: application/json
+
+{
+  "title":"Laptop",
+  "price":5600
+}
