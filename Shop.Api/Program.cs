@@ -4,6 +4,7 @@ using Shop.Api.Middlewares;
 using Shop.Api.Services;
 using Shop.Application.Interfaces.Repository;
 using Shop.Application.Interfaces.Services;
+using Shop.Application.Mapping;
 using Shop.Application.Services;
 using Shop.Infrastructure.Data;
 using Shop.Infrastructure.Repositories;
@@ -26,6 +27,13 @@ public class Program
         {
             options.UseSqlServer(builder.Configuration.GetConnectionString("SqlServerConnection"));
         });
+
+        builder.Services.AddAutoMapper(
+            _ => { },
+            typeof(CategoryProfile).Assembly
+        );
+
+
 
         // ================= CORS =================
         builder.Services.AddCors(options =>

@@ -14,8 +14,16 @@ public class CategoryRepository(ShopDbContext _context) : ICategoryRepository
         return category.Id;
     }
 
+
+    public async Task<Category?> GetCategoryByIdAsync(int id)
+    {
+        return await _context.Categories
+            .Include(c => c.Products)
+            .FirstOrDefaultAsync(c => c.Id == id);
+    }
     public async Task<List<Category>?> GetAllCategoriesAsync()
     {
         return await _context.Categories.ToListAsync();
+
     }
 }
