@@ -43,4 +43,24 @@ public class CategoryController(ICategoryService _categoryService, IImageService
         }
         return Ok(categories);
     }
+    [HttpPut]
+    public async Task<IActionResult> UpdateCategory([FromBody] CategoryUpdateDTO dto)
+    {
+        var result = await _categoryService.UpdateCategoryAsync(dto);
+
+        if (!result)
+            return NotFound();
+
+        return NoContent();
+    }
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCategory(int id)
+    {
+        var result = await _categoryService.DeleteCategoryAsync(id);
+
+        if (!result)
+            return NotFound();
+
+        return NoContent();
+    }
 }

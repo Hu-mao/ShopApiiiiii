@@ -28,4 +28,15 @@ public class CategoryService(ICategoryRepository _repository, IMapper _mapper) :
 
         return _mapper.Map<List<CategoryReadDTO>>(categories);
     }
+    public async Task<bool> UpdateCategoryAsync(CategoryUpdateDTO dto)
+    {
+        var category = _mapper.Map<Category>(dto);
+
+        return await _repository.UpdateCategoryAsync(category);
+    }
+
+    public async Task<bool> DeleteCategoryAsync(int id)
+    {
+        return await _repository.DeleteCategoryAsync(id);
+    }
 }
