@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Shop.Api.Filters;
-using Shop.Api.Interfaces;
-using Shop.Domain.Models;
+using Shop.Application.DTOs.ProductDTOs;
+using Shop.Application.Interfaces.Services;
 
 namespace Shop.Api.Controllers;
 //URL - Uniform Resource Locator - текстовий рядок, який вказує
@@ -12,35 +12,33 @@ namespace Shop.Api.Controllers;
 [LogActionFilter]
 public class ProductController(IProductService _productService) : ControllerBase
 {
-    //private readonly IProductService _productService;
-    //public ProductController(IProductService productService)
-    //{
-    //    _productService = productService;
-    //}
-
-    //EndPoint
-    [HttpGet]
-  
-    public List<Product> GetProducts()
-    {
-        return _productService.GetAllProducts();
-    }
-
-    [HttpGet("{id}")]
-    public IActionResult GetProductById([FromRoute] int id)
-    {
-        var product = new Product()
-        {
-            Name = $"Test Product {id}",
-            Price = 100
-        };
-        return Ok(product);
-    }
-
     [HttpPost]
-    public IActionResult AddNewProduct([FromBody] Product product)
+    public async Task<IActionResult> Create([FromBody] ProductCreateDTO dto)
     {
-        _productService.AddProduct(product);
-        return Created();
+        var id = await _productService.CreateAsync(dto);
+
+        return CreatedAtAction(
+            nameof(GetById),
+            new { id },
+            null);
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var products = await _productService.GetAllAsync();
+
+        return Ok(products);
+    }
+
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var product = await _productService.GetByIdAsync(id);
+
+        if (product == null)
+            return NotFound();
+
+        return Ok(product);
     }
 }

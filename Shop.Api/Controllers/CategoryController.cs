@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Shop.Api.Interfaces;
 using Shop.Api.Request.Category;
 using Shop.Application.DTOs.CategoryDTOs;
@@ -10,6 +11,7 @@ namespace Shop.Api.Controllers;
 [Route("api/v1/[controller]")] //https://ip:port/api/v1
 public class CategoryController(ICategoryService _categoryService, IImageService _imageService):ControllerBase
 {
+    [Authorize]
     [HttpPost]
     public async Task<IActionResult> CreateCategory([FromForm] CategoryCreateRequest dto)
     {

@@ -20,7 +20,8 @@ public class User : BaseEntity {
     
     [Required][Column("password_hash")] 
     public string PasswordHash { get; set; } = string.Empty; 
-    [Column("role")] public UserRole Role { get; set; } = UserRole.User; 
+    [Column("role")] 
+    public UserRole Role { get; set; } = UserRole.User; 
     
     
     [Column("is_active")] 
