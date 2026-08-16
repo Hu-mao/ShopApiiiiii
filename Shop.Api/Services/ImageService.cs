@@ -1,5 +1,4 @@
 ﻿using Shop.Api.Interfaces;
-using Shop.Api.Interfaces;
 namespace Shop.Api.Services
 {
     public class ImageService(IWebHostEnvironment environment) : IImageService

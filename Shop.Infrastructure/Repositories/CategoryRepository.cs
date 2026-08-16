@@ -27,15 +27,15 @@ public class CategoryRepository(ShopDbContext _context) : ICategoryRepository
     }
     public async Task<bool> UpdateCategoryAsync(Category category)
     {
-        var entity = await _context.Categories.FindAsync(category.Id);
+        var existingCategory =
+            await _context.Categories.FindAsync(category.Id);
 
-        if (entity == null)
+        if (existingCategory == null)
+        {
             return false;
+        }
 
-        entity.Name = category.Name;
-        entity.Url = category.Url;
-        entity.Slug = category.Slug;
-        entity.ParentId = category.ParentId;
+        existingCategory.Name = category.Name;
 
         await _context.SaveChangesAsync();
 

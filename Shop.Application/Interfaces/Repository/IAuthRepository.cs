@@ -9,5 +9,6 @@ namespace Shop.Application.Interfaces.Repository
     {
         Task<User?> RegisterUserAsync(User user, string hash);
         Task<bool> IsExistEmailAsync(string email);
+        Task<User?> CreateAdminAsync(User user, string hash);
     }
 }

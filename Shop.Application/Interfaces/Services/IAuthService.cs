@@ -9,5 +9,6 @@ namespace Shop.Application.Interfaces.Services
     {
         Task<AuthResponseDTO?> RegisterAsync(UserCreateDTO dto);
         Task<AuthResponseDTO?> RefreshAsync(string refreshToken);
+        Task<UserReadDTO?> CreateAdminAsync(AdminCreateDTO dto);
     }
 }

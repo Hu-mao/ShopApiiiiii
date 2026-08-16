@@ -99,7 +99,7 @@ public class Program
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
         //--------------SERVICES-------------------
-        builder.Services.AddScoped<IProductService, ProductService>();
+        builder.Services.AddScoped<Interfaces.IProductService, Services.ProductService>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();
         builder.Services.AddScoped<IImageService, ImageService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
@@ -111,7 +111,13 @@ public class Program
      
         builder.Services.AddScoped<IAuthRepository, AuthRepository>();
         builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+        builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
+        builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+        builder.Services.AddMemoryCache();
+
+        builder.Services.AddScoped<ICachingService, MemoryCachingService>();
         // ================= Authentication =================
         builder.Services.AddAuthentication(options =>
         {
@@ -137,6 +143,35 @@ public class Program
             };
     });
 
+
+
+        //===============Cors
+        builder.Services.AddCors(options =>
+
+        {
+
+            options.AddPolicy("AllowAll", policy =>
+
+            {
+
+                policy.AllowAnyOrigin()
+
+                      .AllowAnyMethod()
+
+                      .AllowAnyHeader();
+
+            });
+
+        });
+        //builder.Services.AddCors(options =>
+        //{
+        //    options.AddPolicy("ProductionPolicy", policy =>
+        //    {
+        //        policy.WithOrigins("https://example.com", "https://www.example.com")
+        //              .WithMethods("GET", "POST", "PUT", "DELETE")
+        //              .WithHeaders("Content-Type", "Authorization");
+        //    });
+        //});
         builder.Services.AddAuthorization();
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         //builder.Services.AddOpenApi();
@@ -145,6 +180,7 @@ public class Program
         app.UseSwagger();
         app.UseSwaggerUI();
         app.UseCors("AllowAll");
+        //app.UseCors("ProductionPolicy");
 
         // Configure the HTTP request pipeline.
         //if (app.Environment.IsDevelopment())

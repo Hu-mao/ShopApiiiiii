@@ -25,5 +25,14 @@ namespace Shop.Infrastructure.Repositories
             await _context.SaveChangesAsync();
             return await _context.Users.FirstOrDefaultAsync(us => (us.Email == user.Email && us.PasswordHash == user.PasswordHash));
         }
+        public async Task<User?> CreateAdminAsync(User user, string hash)
+        {
+            user.PasswordHash = hash;
+
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
+
+            return user;
+        }
     }
 }

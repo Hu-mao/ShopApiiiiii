@@ -3,6 +3,7 @@ using Shop.Application.DTOs.UserDTOs;
 using Shop.Application.Interfaces;
 using Shop.Application.Interfaces.Repository;
 using Shop.Application.Interfaces.Services;
+using Shop.Domain.Enums;
 using Shop.Domain.Models;
 using System;
 using System.Collections.Generic;
@@ -70,6 +71,29 @@ namespace Shop.Application.Services
                 Token = accessToken,
                 RefreshToken = token.Token
             };
+        }
+        public async Task<UserReadDTO?> CreateAdminAsync(AdminCreateDTO dto)
+        {
+            var isExist = await _repository.IsExistEmailAsync(dto.Email);
+
+            if (isExist)
+                return null;
+
+            var hash = _hashHelper.Hash(dto.Password);
+
+            var user = new User
+            {
+                Email = dto.Email,
+                Role = UserRole.Admin,
+                IsActive = true
+            };
+
+            var admin = await _repository.CreateAdminAsync(user, hash);
+
+            if (admin == null)
+                return null;
+
+            return _mapper.Map<UserReadDTO>(admin);
         }
     }
 }

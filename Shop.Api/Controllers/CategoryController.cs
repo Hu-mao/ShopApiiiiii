@@ -65,4 +65,34 @@ public class CategoryController(ICategoryService _categoryService, IImageService
 
         return NoContent();
     }
+    [HttpGet("{id}/parents")]
+    public async Task<IActionResult> GetParentCategories(int id)
+    {
+        var categories = await _categoryService.GetParentCategoriesAsync(id);
+
+        if (categories == null)
+            return NotFound();
+
+        return Ok(categories);
+    }
+    [HttpGet("{id}/children")]
+    public async Task<IActionResult> GetChildCategories(int id)
+    {
+        var categories = await _categoryService.GetChildCategoriesAsync(id);
+
+        if (categories == null)
+            return NotFound();
+
+        return Ok(categories);
+    }
+    [HttpGet("tree")]
+    public async Task<IActionResult> GetCategoryTree()
+    {
+        var tree = await _categoryService.GetCategoryTreeAsync();
+
+        if (tree.Count == 0)
+            return NotFound();
+
+        return Ok(tree);
+    }
 }
