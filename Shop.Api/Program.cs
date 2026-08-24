@@ -16,6 +16,7 @@ using Shop.Infrastructure.Data;
 using Shop.Infrastructure.Helpers;
 using Shop.Infrastructure.Repositories;
 using Shop.Infrastructure.Services;
+using StackExchange.Redis;
 using System.Text;
 
 namespace Shop.Api;
@@ -47,8 +48,8 @@ public class Program
         var configuration = builder.Configuration;
         builder.Services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
         // ================= JWT Settings =================
+        builder.Services.Configure<RabbitMqSettings>(configuration.GetSection("RabbitMq"));
         var jwtSettings = configuration.GetSection("Jwt").Get<JwtSettings>()
-
       ?? throw new Exception("JWT settings not configured.");
         // ================= CORS =================
         builder.Services.AddCors(options =>
@@ -90,7 +91,16 @@ public class Program
             });
 
         });
+        //======================Redis=====================
+        builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 
+        {
+
+            var config = builder.Configuration.GetConnectionString("RedisServerConnection");
+
+            return ConnectionMultiplexer.Connect(config);
+
+        });
         //builder.Services.AddSwaggerGen();
 
         // Add services to the container.
@@ -115,9 +125,11 @@ public class Program
 
         builder.Services.AddScoped<ICategoryService, CategoryService>();
 
+
         builder.Services.AddMemoryCache();
 
-        builder.Services.AddScoped<ICachingService, MemoryCachingService>();
+        //builder.Services.AddScoped<ICachingService, MemoryCachingService>();
+        builder.Services.AddScoped<ICachingService, RedisCachingService>();
         // ================= Authentication =================
         builder.Services.AddAuthentication(options =>
         {
@@ -172,10 +184,11 @@ public class Program
         //              .WithHeaders("Content-Type", "Authorization");
         //    });
         //});
+        builder.Services.AddHostedService<RabbitMqReaderService>();
+        builder.Services.AddSingleton<IQueueService, RabbitMqService>();
         builder.Services.AddAuthorization();
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         //builder.Services.AddOpenApi();
-
         var app = builder.Build();
         app.UseSwagger();
         app.UseSwaggerUI();
@@ -197,8 +210,8 @@ public class Program
         app.UseMiddleware<RequestTimerMiddleware>();
         app.UseStaticFiles();
         app.MapControllers();
-        
-       
+
+
 
         app.Run();
     }
