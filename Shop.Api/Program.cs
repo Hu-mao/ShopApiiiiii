@@ -14,6 +14,7 @@ using Shop.Application.Services;
 using Shop.Infrastructure.Configuration;
 using Shop.Infrastructure.Data;
 using Shop.Infrastructure.Helpers;
+using Shop.Infrastructure.RabbitMQ;
 using Shop.Infrastructure.Repositories;
 using Shop.Infrastructure.Services;
 using StackExchange.Redis;
@@ -122,7 +123,7 @@ public class Program
         builder.Services.AddScoped<IAuthRepository, AuthRepository>();
         builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-
+        builder.Services.AddScoped<RabbitMQProducer>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 
