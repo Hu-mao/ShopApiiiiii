@@ -63,5 +63,29 @@ namespace Shop.Api.Controllers
                 accessToken = result.Token
             });
         }
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] UserLoginDTO dto)
+        {
+            var result = await _authService.LoginAsync(dto);
+
+            if (result == null)
+                return Unauthorized("Невірний email або пароль");
+
+            Response.Cookies.Append(
+                "refreshToken",
+                result.RefreshToken,
+                new CookieOptions
+                {
+                    HttpOnly = true,
+                    Secure = true,
+                    SameSite = SameSiteMode.Strict,
+                    Expires = DateTimeOffset.UtcNow.AddDays(30)
+                });
+
+            return Ok(new
+            {
+                accessToken = result.Token
+            });
+        }
     }
 }
