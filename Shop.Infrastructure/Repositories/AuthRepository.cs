@@ -34,12 +34,15 @@ namespace Shop.Infrastructure.Repositories
 
             return user;
         }
-        public async Task<User?> LoginAsync(string email, string passwordHash)
+        public async Task<User?> LoginAsync(
+            string email,
+            string passwordHash)
         {
             return await _context.Users
-                .FirstOrDefaultAsync(x =>
-                    x.Email == email &&
-                    x.PasswordHash == passwordHash);
+                .FirstOrDefaultAsync(user =>
+                    user.Email == email &&
+                    user.PasswordHash == passwordHash &&
+                    user.IsActive);
         }
     }
 }

@@ -1,45 +1,53 @@
 ﻿using AutoMapper;
+using Microsoft.Extensions.Configuration;
+
 using Shop.Application.DTOs.UserDTOs;
 using Shop.Application.Interfaces;
 using Shop.Application.Interfaces.Repository;
 using Shop.Application.Interfaces.Services;
+
 using Shop.Domain.Enums;
 using Shop.Domain.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Shop.Application.Services
 {
-    public class AuthService(IMapper _mapper, IAuthRepository _repository, IRefreshTokenRepository _refreshTokenRepository, IHashHelper _hashHelper, IJWTService _jwtService) : IAuthService
+    public class AuthService(
+        IMapper _mapper,
+        IAuthRepository _repository,
+        IRefreshTokenRepository _refreshTokenRepository,
+        IHashHelper _hashHelper,
+        IJWTService _jwtService,
+        IConfiguration _configuration
+    ) : IAuthService
     {
-        public async Task<AuthResponseDTO?> RegisterAsync(UserCreateDTO dto)
+        public async Task<AuthResponseDTO?> RegisterAsync(
+            UserCreateDTO dto)
         {
-            var isExist = await _repository.IsExistEmailAsync(dto.Email);
+            var isExist =
+                await _repository.IsExistEmailAsync(dto.Email);
 
             if (isExist)
                 return null;
 
-            var hash = _hashHelper.Hash(dto.Password);
-            var user = _mapper.Map<User>(dto);
+            var hash =
+                _hashHelper.Hash(dto.Password);
 
-            var registerUser = await _repository.RegisterUserAsync(user, hash);
+            var user =
+                _mapper.Map<User>(dto);
+
+            var registerUser =
+                await _repository.RegisterUserAsync(user, hash);
 
             if (registerUser == null)
                 return null;
 
-            var accessToken = _jwtService.GenerateAccessToken(
-                _mapper.Map<UserLoginDTO>(registerUser),
-                registerUser.Role.ToString());
+            var accessToken =
+                _jwtService.GenerateAccessToken(
+                    _mapper.Map<UserLoginDTO>(registerUser),
+                    registerUser.Role.ToString());
 
-            var refreshToken = new RefreshToken
-            {
-                Token = Convert.ToBase64String(
-                    System.Security.Cryptography.RandomNumberGenerator.GetBytes(64)),
-                UserId = registerUser.Id,
-                ExpireDate = DateTime.UtcNow.AddDays(30),
-                IsRevoked = false
-            };
+            var refreshToken =
+                CreateRefreshToken(registerUser.Id);
 
             await _refreshTokenRepository.AddAsync(refreshToken);
 
@@ -50,9 +58,47 @@ namespace Shop.Application.Services
                 RefreshToken = refreshToken.Token
             };
         }
-        public async Task<AuthResponseDTO?> RefreshAsync(string refreshToken)
+
+
+        public async Task<AuthResponseDTO?> LoginAsync(
+            UserLoginDTO dto)
         {
-            var token = await _refreshTokenRepository.GetTokenAsync(refreshToken);
+            var hash =
+                _hashHelper.Hash(dto.Password);
+
+            var user =
+                await _repository.LoginAsync(
+                    dto.Email,
+                    hash);
+
+            if (user == null)
+                return null;
+
+            var accessToken =
+                _jwtService.GenerateAccessToken(
+                    dto,
+                    user.Role.ToString());
+
+            var refreshToken =
+                CreateRefreshToken(user.Id);
+
+            await _refreshTokenRepository.AddAsync(refreshToken);
+
+            return new AuthResponseDTO
+            {
+                User = _mapper.Map<UserReadDTO>(user),
+                Token = accessToken,
+                RefreshToken = refreshToken.Token
+            };
+        }
+
+
+        public async Task<AuthResponseDTO?> RefreshAsync(
+            string refreshToken)
+        {
+            var token =
+                await _refreshTokenRepository
+                    .GetTokenAsync(refreshToken);
 
             if (token == null)
                 return null;
@@ -63,7 +109,13 @@ namespace Shop.Application.Services
             if (token.ExpireDate <= DateTime.UtcNow)
                 return null;
 
-            var accessToken = _jwtService.GenerateAccessToken(_mapper.Map<UserLoginDTO>(token.User), token.User.Role.ToString());
+            if (!token.User.IsActive)
+                return null;
+
+            var accessToken =
+                _jwtService.GenerateAccessToken(
+                    _mapper.Map<UserLoginDTO>(token.User),
+                    token.User.Role.ToString());
 
             return new AuthResponseDTO
             {
@@ -72,14 +124,42 @@ namespace Shop.Application.Services
                 RefreshToken = token.Token
             };
         }
-        public async Task<UserReadDTO?> CreateAdminAsync(AdminCreateDTO dto)
+
+
+        private RefreshToken CreateRefreshToken(Guid userId)
         {
-            var isExist = await _repository.IsExistEmailAsync(dto.Email);
+            var expiresDays = int.Parse(
+     _configuration["JwtSettings:ExpiresRefreshTokenDay"]!
+ );
+
+            return new RefreshToken
+            {
+                Token = Convert.ToBase64String(
+                    System.Security.Cryptography
+                        .RandomNumberGenerator
+                        .GetBytes(64)),
+
+                UserId = userId,
+
+                ExpireDate =
+                    DateTime.UtcNow.AddDays(expiresDays),
+
+                IsRevoked = false
+            };
+        }
+
+
+        public async Task<UserReadDTO?> CreateAdminAsync(
+            AdminCreateDTO dto)
+        {
+            var isExist =
+                await _repository.IsExistEmailAsync(dto.Email);
 
             if (isExist)
                 return null;
 
-            var hash = _hashHelper.Hash(dto.Password);
+            var hash =
+                _hashHelper.Hash(dto.Password);
 
             var user = new User
             {
@@ -88,7 +168,10 @@ namespace Shop.Application.Services
                 IsActive = true
             };
 
-            var admin = await _repository.CreateAdminAsync(user, hash);
+            var admin =
+                await _repository.CreateAdminAsync(
+                    user,
+                    hash);
 
             if (admin == null)
                 return null;

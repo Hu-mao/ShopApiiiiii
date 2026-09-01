@@ -7,5 +7,6 @@
         public string Audience { get; set; } = null!;
         public int ExpiresMinutes { get; set; }
         public int ExpiresRefreshTokenDay { get; set; }
+
     }
 }
