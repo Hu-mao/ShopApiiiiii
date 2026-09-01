@@ -1,91 +1,92 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using Shop.Application.DTOs.UserDTOs;
 using Shop.Application.Interfaces.Services;
-namespace Shop.Api.Controllers
+using Shop.Infrastructure.Configuration;
+
+namespace Shop.Api.Controllers;
+
+[ApiController]
+[Route("api/v1/[controller]")]
+public class AuthController(
+    IAuthService _authService,
+    IOptions<JwtSettings> _jwtOptions) : ControllerBase
 {
-    [ApiController]
-    [Route("api/v1/[controller]")]
-    public class AuthController(IAuthService _authService) : ControllerBase
+    private readonly JwtSettings _jwtSettings = _jwtOptions.Value;
+
+    [HttpPost("register")]
+    public async Task<IActionResult> RegisterUser(
+        [FromBody] UserCreateDTO dto)
     {
-        [HttpPost("register")]
-        public async Task<IActionResult> RegisterUser([FromBody] UserCreateDTO dto)
+        var result = await _authService.RegisterAsync(dto);
+
+        if (result == null)
+            return BadRequest("Користувач за таким email вже існує");
+
+        SetRefreshTokenCookie(result.RefreshToken!);
+
+        return Ok(new
         {
-            var user = await _authService.RegisterAsync(dto);
+            user = result.User,
+            accessToken = result.Token
+        });
+    }
 
-            if (user.User == null || user.Token == null)
-                return BadRequest("Користувач за таким email вже існує");
+    [HttpPost("login")]
+    public async Task<IActionResult> Login(
+        [FromBody] UserLoginDTO dto)
+    {
+        var result = await _authService.LoginAsync(dto);
 
-            Response.Cookies.Append(
-                "refreshToken",
-                user.Token,
-                new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = DateTimeOffset.UtcNow.AddDays(15)
-                });
+        if (result == null)
+            return Unauthorized("Невірний email або пароль");
 
-            return Ok(new
-            {
-                user = user.User,
-                accessToken = user.Token
-            });
+        SetRefreshTokenCookie(result.RefreshToken!);
+
+        return Ok(new
+        {
+            user = result.User,
+            accessToken = result.Token
+        });
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh()
+    {
+        var refreshToken = Request.Cookies["refreshToken"];
+
+        if (string.IsNullOrEmpty(refreshToken))
+            return Unauthorized("Refresh token not found.");
+
+        var result = await _authService.RefreshAsync(refreshToken);
+
+        if (result == null)
+        {
+            Response.Cookies.Delete("refreshToken");
+
+            return Unauthorized("Invalid or expired refresh token.");
         }
 
-        [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh()
+        SetRefreshTokenCookie(result.RefreshToken!);
+
+        return Ok(new
         {
-            var refreshToken = Request.Cookies["refreshToken"];
+            accessToken = result.Token
+        });
+    }
 
-            if (string.IsNullOrEmpty(refreshToken))
-                return Unauthorized("Refresh token not found.");
-
-            var result = await _authService.RefreshAsync(refreshToken);
-
-            if (result == null)
-                return Unauthorized("Invalid refresh token.");
-
-            Response.Cookies.Append(
-                "refreshToken",
-                result.RefreshToken,
-                new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = DateTimeOffset.UtcNow.AddDays(30)
-                });
-
-            return Ok(new
+    private void SetRefreshTokenCookie(string refreshToken)
+    {
+        Response.Cookies.Append(
+            "refreshToken",
+            refreshToken,
+            new CookieOptions
             {
-                accessToken = result.Token
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTimeOffset.UtcNow.AddDays(
+                    _jwtSettings.ExpiresRefreshTokenDay)
             });
-        }
-        [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] UserLoginDTO dto)
-        {
-            var result = await _authService.LoginAsync(dto);
-
-            if (result == null)
-                return Unauthorized("Невірний email або пароль");
-
-            Response.Cookies.Append(
-                "refreshToken",
-                result.RefreshToken,
-                new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = DateTimeOffset.UtcNow.AddDays(30)
-                });
-
-            return Ok(new
-            {
-                accessToken = result.Token
-            });
-        }
     }
 }
