@@ -36,14 +36,14 @@ public class CategoryController(ICategoryService _categoryService, IImageService
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllCategories()
+    public async Task<IActionResult> GetAllCategories(
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 8)
     {
-        List<CategoryReadDTO>? categories = await _categoryService.GetAllCategoriesAsync();
-        if(categories== null || categories.Count == 0)
-        {
-            return NotFound();
-        }
-        return Ok(categories);
+        var result = await _categoryService
+            .GetCategoriesPagedAsync(page, pageSize);
+
+        return Ok(result);
     }
     [HttpPut]
     public async Task<IActionResult> UpdateCategory([FromBody] CategoryUpdateDTO dto)

@@ -10,4 +10,5 @@ public interface ICategoryRepository
     Task<List<Category>?> GetAllCategoriesAsync();
     Task<bool> UpdateCategoryAsync(Category category);
     Task<bool> DeleteCategoryAsync(int id);
+    Task<(List<Category> Items, int TotalItems)> GetCategoriesPagedAsync(int page, int pageSize);
 }

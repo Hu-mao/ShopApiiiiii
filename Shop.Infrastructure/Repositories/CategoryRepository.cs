@@ -55,4 +55,21 @@ public class CategoryRepository(ShopDbContext _context) : ICategoryRepository
 
         return true;
     }
+    public async Task<(List<Category> Items, int TotalItems)> GetCategoriesPagedAsync(
+    int page,
+    int pageSize)
+    {
+        var query = _context.Categories
+            .Where(c => c.ParentId == null)
+            .OrderBy(c => c.Id);
+
+        var totalItems = await query.CountAsync();
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, totalItems);
+    }
 }

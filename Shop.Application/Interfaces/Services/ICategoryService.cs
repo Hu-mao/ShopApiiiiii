@@ -15,4 +15,5 @@ public interface ICategoryService
     Task<List<CategoryReadDTO>?> GetChildCategoriesAsync(int id);
 
     Task<List<CategoryTreeDTO>> GetCategoryTreeAsync();
+    Task<CategoryPagedDTO> GetCategoriesPagedAsync(int page, int pageSize);
 }

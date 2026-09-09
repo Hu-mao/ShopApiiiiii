@@ -175,4 +175,28 @@ public class CategoryService(ICategoryRepository _repository, IMapper _mapper, I
 
         return BuildTree(null);
     }
+    public async Task<CategoryPagedDTO> GetCategoriesPagedAsync(
+    int page,
+    int pageSize)
+    {
+        var result = await _repository.GetCategoriesPagedAsync(
+            page,
+            pageSize
+        );
+
+        var categories = _mapper.Map<List<CategoryReadDTO>>(result.Items);
+
+        var totalPages = (int)Math.Ceiling(
+            (double)result.TotalItems / pageSize
+        );
+
+        return new CategoryPagedDTO
+        {
+            Items = categories,
+            TotalItems = result.TotalItems,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = totalPages
+        };
+    }
 }
