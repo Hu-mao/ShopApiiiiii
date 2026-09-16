@@ -11,15 +11,23 @@ using Shop.Domain.Models;
 
 namespace Shop.Application.Services
 {
+
     public class AuthService(
         IMapper _mapper,
         IAuthRepository _repository,
         IRefreshTokenRepository _refreshTokenRepository,
         IHashHelper _hashHelper,
         IJWTService _jwtService,
-        IConfiguration _configuration
+        IConfiguration _configuration,
+        IPasswordResetTokenRepository passwordResetTokenRepository,
+IEmailService emailService
     ) : IAuthService
     {
+        private readonly IPasswordResetTokenRepository
+    _passwordResetTokenRepository = passwordResetTokenRepository;
+
+        private readonly IEmailService
+            _emailService = emailService;
         public async Task<AuthResponseDTO?> RegisterAsync(
             UserCreateDTO dto)
         {
@@ -178,5 +186,87 @@ namespace Shop.Application.Services
 
             return _mapper.Map<UserReadDTO>(admin);
         }
+        public async Task ForgotPasswordAsync(
+    ForgotPasswordDTO dto)
+        {
+            var user = await _repository
+                .GetUserByEmailAsync(dto.Email);
+
+            if (user == null)
+                return;
+
+            var token = Guid.NewGuid().ToString("N");
+
+            var resetToken = new PasswordResetToken
+            {
+                Token = token,
+                UserId = user.Id,
+                ExpiresAt = DateTime.UtcNow.AddHours(1),
+                IsUsed = false
+            };
+
+            await _passwordResetTokenRepository
+                .AddAsync(resetToken);
+
+            var frontendUrl =
+                "http://localhost:5173/reset-password";
+
+            var link =
+                $"{frontendUrl}?email={Uri.EscapeDataString(dto.Email)}&token={token}";
+
+            await _emailService.SendEmailAsync(
+                dto.Email,
+                "Reset your password",
+                $"""
+        <h2>Password reset</h2>
+
+        <p>
+            You requested a password reset.
+        </p>
+
+        <p>
+            <a href="{link}">
+                Reset password
+            </a>
+        </p>
+
+        <p>
+            This link expires in 1 hour.
+        </p>
+        """);
+        }
+        public async Task ResetPasswordAsync(
+    ResetPasswordDTO dto)
+        {
+            var resetToken =
+                await _passwordResetTokenRepository
+                    .GetByTokenAsync(dto.Token);
+
+            if (resetToken == null)
+                throw new Exception("Invalid reset token");
+
+            if (resetToken.IsUsed)
+                throw new Exception("Reset token already used");
+
+            if (resetToken.ExpiresAt < DateTime.UtcNow)
+                throw new Exception("Reset token expired");
+
+            if (!string.Equals(
+                    resetToken.User.Email,
+                    dto.Email,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Exception("Invalid reset token");
+            }
+
+            var hash = _hashHelper.Hash(dto.NewPassword);
+
+            resetToken.User.PasswordHash = hash;
+
+            await _passwordResetTokenRepository
+                .MarkAsUsedAsync(resetToken);
+        }
+       
+
     }
 }

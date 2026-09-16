@@ -1,10 +1,14 @@
 ﻿
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-
 using Shop.Application.DTOs.UserDTOs;
 using Shop.Application.Interfaces.Services;
 using Shop.Infrastructure.Configuration;
+using System.Security.Claims;
 
 namespace Shop.Api.Controllers
 {
@@ -17,6 +21,21 @@ namespace Shop.Api.Controllers
         private const string RefreshTokenCookieName =
             "refreshToken";
 
+     [HttpGet("login-google")]
+        public IActionResult LoginGoogle()
+
+{
+
+    var properties = new AuthenticationProperties
+    {
+
+        RedirectUri = Url.Action(nameof(ExternalResponse))
+
+    };
+
+    return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+
+}
 
         [HttpPost("register")]
         public async Task<IActionResult> RegisterUser(
@@ -40,7 +59,47 @@ namespace Shop.Api.Controllers
             });
         }
 
+        [HttpGet("external-response")]
+        public async Task<IActionResult> ExternalResponse()
 
+{
+
+    var result = await HttpContext.AuthenticateAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+
+    if (!result.Succeeded)
+
+        return BadRequest("Помилка зовнішньої аутентифікації.");
+
+
+        var claims = result.Principal.Identities.FirstOrDefault()?.Claims;
+
+
+        var email = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+
+        var name = claims?.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+
+        var providerId = claims?.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+        return Ok(new { Name = name, Email = email, ProviderId = providerId });
+
+        
+   
+}
+
+        [HttpPost("logout")]
+
+        [Authorize]
+
+        public async Task<IActionResult> Logout()
+
+        {
+
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+
+            return Ok("Вихід успішний.");
+
+        }
         [HttpPost("login")]
         public async Task<IActionResult> Login(
             [FromBody] UserLoginDTO dto)
@@ -116,6 +175,31 @@ namespace Shop.Api.Controllers
                             _jwtSettings.Value
                                 .ExpiresRefreshTokenDay)
                 });
+        }
+        [HttpPost("forgot-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ForgotPassword(
+    ForgotPasswordDTO dto)
+        {
+            await _authService.ForgotPasswordAsync(dto);
+
+            return Ok(new
+            {
+                message =
+                    "If the email exists, a password reset link has been sent."
+            });
+        }
+        [HttpPost("reset-password")]
+        [AllowAnonymous]
+        public async Task<IActionResult> ResetPassword(
+    ResetPasswordDTO dto)
+        {
+            await _authService.ResetPasswordAsync(dto);
+
+            return Ok(new
+            {
+                message = "Password changed successfully"
+            });
         }
     }
 }

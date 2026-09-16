@@ -44,5 +44,10 @@ namespace Shop.Infrastructure.Repositories
                     user.PasswordHash == passwordHash &&
                     user.IsActive);
         }
+        public async Task<User?> GetUserByEmailAsync(string email)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(x => x.Email == email);
+        }
     }
 }

@@ -11,5 +11,6 @@ namespace Shop.Application.Interfaces.Repository
         Task<bool> IsExistEmailAsync(string email);
         Task<User?> CreateAdminAsync(User user, string hash);
         Task<User?> LoginAsync(string email, string passwordHash);
+        Task<User?> GetUserByEmailAsync(string email);
     }
 }

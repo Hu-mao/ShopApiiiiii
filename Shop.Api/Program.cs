@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -31,7 +32,7 @@ namespace Shop.Api;
 //}
 public class Program
 {
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);
         builder.Services.AddDbContext<ShopDbContext>(options =>
@@ -131,33 +132,69 @@ public class Program
 
         //builder.Services.AddScoped<ICachingService, MemoryCachingService>();
         builder.Services.AddScoped<ICachingService, RedisCachingService>();
-        // ================= Authentication =================
+        // ================= AUTHENTICATION (JWT + COOKIES + GOOGLE) =================
         builder.Services.AddAuthentication(options =>
-        {
-            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-        })
-        .AddJwtBearer(options =>
+
+      {
+          //               EMAILSERVICE
+          builder.Services.AddScoped<IEmailService, EmailService>();
+
+          builder.Services.AddScoped<
+              IPasswordResetTokenRepository,
+              PasswordResetTokenRepository>();
+
+          builder.Services.AddScoped<IAdminService, AdminService>();
+          // Для стандартних API-запитів використовуємо JWToptions.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+
+          options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+
+      })
+
+     .AddJwtBearer(options =>
+
+     {
+
+         options.TokenValidationParameters = new TokenValidationParameters
          {
-             //Правила перевірки токена
-             options.TokenValidationParameters = new TokenValidationParameters            {
+
              ValidateIssuer = true,
-                ValidateAudience = true,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
 
-                ValidIssuer = jwtSettings.Issuer,
-                ValidAudience = jwtSettings.Audience,
-                IssuerSigningKey = new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwtSettings.Key)
-                ),
+             ValidateAudience = true,
 
-                ClockSkew = TimeSpan.Zero
-            };
-    });
+             ValidateLifetime = true,
+
+             ValidateIssuerSigningKey = true,
 
 
+             ValidIssuer = jwtSettings.Issuer,
 
+             ValidAudience = jwtSettings.Audience,
+
+
+             IssuerSigningKey = new SymmetricSecurityKey(
+
+                 Encoding.UTF8.GetBytes(jwtSettings.Key)
+
+             ),
+
+
+             ClockSkew = TimeSpan.Zero
+
+         };
+
+     })
+
+     .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme).AddGoogle(options =>
+
+     {
+
+            options.ClientId = configuration["Authentication:Google:ClientId"]!;
+
+            options.ClientSecret = configuration["Authentication:Google:ClientSecret"]!;
+
+            options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+
+        });
         //===============Cors
         builder.Services.AddCors(options =>
 
@@ -191,6 +228,16 @@ public class Program
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         //builder.Services.AddOpenApi();
         var app = builder.Build();
+        using (var scope = app.Services.CreateScope())
+        {
+            var context = scope.ServiceProvider
+                .GetRequiredService<ShopDbContext>();
+
+            var hashHelper = scope.ServiceProvider
+                .GetRequiredService<IHashHelper>();
+
+            await AdminSeeder.SeedAsync(context, hashHelper);
+        }
         app.UseSwagger();
         app.UseSwaggerUI();
         app.UseCors("AllowAll");

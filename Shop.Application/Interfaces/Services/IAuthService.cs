@@ -11,5 +11,7 @@ namespace Shop.Application.Interfaces.Services
         Task<AuthResponseDTO?> RefreshAsync(string refreshToken);
         Task<UserReadDTO?> CreateAdminAsync(AdminCreateDTO dto);
         Task<AuthResponseDTO?> LoginAsync(UserLoginDTO dto);
+        Task ResetPasswordAsync(ResetPasswordDTO dto);
+        Task ForgotPasswordAsync(ForgotPasswordDTO dto);
     }
 }
