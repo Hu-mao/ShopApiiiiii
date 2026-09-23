@@ -12,6 +12,7 @@ using Shop.Application.Interfaces.Repository;
 using Shop.Application.Interfaces.Services;
 using Shop.Application.Mapping;
 using Shop.Application.Services;
+using Shop.Application.Validators.Category;
 using Shop.Infrastructure.Configuration;
 using Shop.Infrastructure.Data;
 using Shop.Infrastructure.Helpers;
@@ -20,7 +21,8 @@ using Shop.Infrastructure.Repositories;
 using Shop.Infrastructure.Services;
 using StackExchange.Redis;
 using System.Text;
-
+using FluentValidation;
+using FluentValidation.AspNetCore;
 namespace Shop.Api;
 
 //public static class MiddlewareExtensions
@@ -110,22 +112,33 @@ public class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
-        //--------------SERVICES-------------------
+        //--------------SERVICES
         builder.Services.AddScoped<Interfaces.IProductService, Services.ProductService>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();
         builder.Services.AddScoped<IImageService, ImageService>();
         builder.Services.AddScoped<IAuthService, AuthService>();
         builder.Services.AddScoped<IJWTService, JWTService>();
+        builder.Services.AddScoped<IEmailService, EmailService>();
+        builder.Services.AddScoped<IAdminService, AdminService>();
         //--------------HELPERS
         builder.Services.AddSingleton<IHashHelper, HashHelper>();
         //--------------REPOSITORIES
+        //--------------REPOSITORIES
         builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-     
         builder.Services.AddScoped<IAuthRepository, AuthRepository>();
         builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
-        builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-        builder.Services.AddScoped<RabbitMQProducer>();
+        builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();
+        //VALIDATORS
+        builder.Services.AddFluentValidationAutoValidation();
+        builder.Services.AddValidatorsFromAssemblyContaining<CategoryCreateValidator>();
+
+
+
+
+
+
+        builder.Services.AddScoped<RabbitMQProducer>();
 
 
         builder.Services.AddMemoryCache();
@@ -134,21 +147,10 @@ public class Program
         builder.Services.AddScoped<ICachingService, RedisCachingService>();
         // ================= AUTHENTICATION (JWT + COOKIES + GOOGLE) =================
         builder.Services.AddAuthentication(options =>
-
-      {
-          //               EMAILSERVICE
-          builder.Services.AddScoped<IEmailService, EmailService>();
-
-          builder.Services.AddScoped<
-              IPasswordResetTokenRepository,
-              PasswordResetTokenRepository>();
-
-          builder.Services.AddScoped<IAdminService, AdminService>();
-          // Для стандартних API-запитів використовуємо JWToptions.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-
-          options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-
-      })
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
 
      .AddJwtBearer(options =>
 
