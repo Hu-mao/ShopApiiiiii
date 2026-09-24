@@ -6,6 +6,7 @@ namespace Shop.Api.Controllers
     [Route("api/[controller]")]
     public class CTController(ILogger<CTController> _logger):ControllerBase
     {
+        [NonAction]
         public async Task<IActionResult> TestWithoutCT()
 
         {
@@ -26,7 +27,7 @@ namespace Shop.Api.Controllers
 
         }
 
-
+        [NonAction]
         public async Task<IActionResult> TestWithCT(CancellationToken cancellationToken)
 
         {

@@ -111,7 +111,7 @@ public class Program
         //DI container
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddSwaggerGen();
+        //--------------SERVICES
         //--------------SERVICES
         builder.Services.AddScoped<Interfaces.IProductService, Services.ProductService>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -128,8 +128,6 @@ public class Program
         builder.Services.AddScoped<IAuthRepository, AuthRepository>();
         builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
-        builder.Services.AddScoped<ICategoryService, CategoryService>();
-        builder.Services.AddScoped<Interfaces.IProductService, Services.ProductService>();
         builder.Services.AddScoped<IProductRepository, ProductRepository>();
         //VALIDATORS
         builder.Services.AddFluentValidationAutoValidation();
@@ -245,17 +243,7 @@ public class Program
         app.UseSwagger();
         app.UseSwaggerUI();
         app.UseCors("AllowAll");
-        //app.UseCors("ProductionPolicy");
 
-        // Configure the HTTP request pipeline.
-        //if (app.Environment.IsDevelopment())
-        //{
-        //    app.MapOpenApi();
-        //}
-
-        //app.UseHttpsRedirection();
-
-        //app.UseAuthorization();
         app.UseAuthentication();
 
         app.UseAuthorization();
