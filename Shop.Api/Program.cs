@@ -129,6 +129,8 @@ public class Program
         builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
         builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
         builder.Services.AddScoped<ICategoryService, CategoryService>();
+        builder.Services.AddScoped<Interfaces.IProductService, Services.ProductService>();
+        builder.Services.AddScoped<IProductRepository, ProductRepository>();
         //VALIDATORS
         builder.Services.AddFluentValidationAutoValidation();
         builder.Services.AddValidatorsFromAssemblyContaining<CategoryCreateValidator>();
